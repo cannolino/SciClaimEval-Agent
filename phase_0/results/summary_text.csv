@@ -1,0 +1,2 @@
+model,samples,accuracy,macro_f1,invalid_predictions
+meta-llama-3.1-8b-instruct,50,0.74,0.49019607843137253,0
