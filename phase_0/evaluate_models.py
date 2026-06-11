@@ -3,12 +3,12 @@ from pathlib import Path
 import argparse, base64, json
 
 def main():
-    api_key = '<api_key>'
+    api_key = '<api-key>'
     base_url = "https://chat-ai.academiccloud.de/v1"
     # with open("phase_0/models_list.txt", "r") as f:
     #     models = f.read()
     #     print(models.splitlines())
-    model = ["meta-llama-3.1-8b-instruct"]
+    model = ["internvl3.5-30b-a3b"]
     client = OpenAI(
         api_key = api_key,
         base_url = base_url
@@ -37,10 +37,8 @@ def main():
     output_file.parent.mkdir(parents=True, exist_ok=True)
     write_responses(input_file, model, client, output_file)
 
-if __name__ == "__main__":
-    main()
-
 def encode_image(image_path):
+    print(image_path)
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode("utf-8")
 
@@ -48,20 +46,19 @@ def write_responses(input_file, models, client:OpenAI, output_file):
     dic = dict()
     with open(input_file, "r") as f:
         dataset = json.load(f)
-    dataset = dataset["rows"]
     for model in models:
         dic[model] = list()
         for data in dataset[:10]:
-            prompt = 'Determine whether the claim: "' + data["claim"] + '" is supported or refuted, given evidence depicted in the image.'
+            prompt = 'Determine whether the claim: "' + data["claim"] + '" is supported or refuted, given evidence depicted in the image. Answer with one word either Supported or Refuted.'
             # TODO: adjust prompt given context information accordingly
             # if data["use_context"] == "no":
-            #     prompt = 
+            #     prompt =
             # if data["use_context"] == "yes":
-            #     prompt = 
+            #     prompt =
             # if data["use_context"] == "other sources":
-            #     prompt = 
-            base64_image = encode_image(str(input_file) + '/' + data["evi_path"])
-            chat_completion = client.chat.completions.create(
+            #     prompt =
+            base64_image = encode_image(input_file.parent / data["evi_path"])
+            response = client.chat.completions.create(
                     model=model,
                     messages=[
                         {"role":"system","content":"You are a scientific reviewer."},
@@ -72,14 +69,16 @@ def write_responses(input_file, models, client:OpenAI, output_file):
                                 {
                                     "type": "image_url",
                                     "image_url": {
-                                        "url": f"data:image/png;base64,{base64_image}",
+                                        "url": f"data:image/jpeg;base64,{base64_image}"
                                     },
                                 },
-                            ]
+                            ],
                         }
                     ],
-                    max_completion_tokens=1
                 )
-            dic[model].append({"claim_id": data["claim_id"], "pred_label": str.title(chat_completion)})
+            dic[model].append({"claim_id": data["claim_id"], "pred_label": response.choices[0].message.content})
     with open(output_file, "w") as f:
         json.dump(dic, f, indent=2)
+
+if __name__ == "__main__":
+    main()
