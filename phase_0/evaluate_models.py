@@ -49,7 +49,7 @@ def write_responses(input_file, models, client:OpenAI, output_file):
     for model in models:
         dic[model] = list()
         for data in dataset[:10]:
-            prompt = 'Determine whether the claim: "' + data["claim"] + '" is supported or refuted, given evidence depicted in the image. Answer with one word either Supported or Refuted.'
+            prompt = 'Determine whether the claim: "' + data["claim"] + '" is supported or refuted, given evidence depicted in the image.'
             # TODO: adjust prompt given context information accordingly
             # if data["use_context"] == "no":
             #     prompt =
@@ -59,6 +59,7 @@ def write_responses(input_file, models, client:OpenAI, output_file):
             #     prompt =
             base64_image = encode_image(input_file.parent / data["evi_path"])
             response = client.chat.completions.create(
+                    max_completion_tokens=1,
                     model=model,
                     messages=[
                         {"role":"system","content":"You are a scientific reviewer."},
